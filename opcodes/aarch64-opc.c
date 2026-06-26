@@ -5261,10 +5261,12 @@ verify_three_different_regs (const struct aarch64_inst *inst,
   rn = inst->operands[2].reg.regno;
   if (rd == rs || rd == rn || rs == rn)
     {
-      mismatch_detail->kind = AARCH64_OPDE_SYNTAX_ERROR;
-      mismatch_detail->error
-	= _("the three register operands must be distinct from one another");
-      mismatch_detail->index = -1;
+      if (mismatch_detail) {
+	mismatch_detail->kind = AARCH64_OPDE_SYNTAX_ERROR;
+	mismatch_detail->error
+	  = _("the three register operands must be distinct from one another");
+	mismatch_detail->index = -1;
+      }
       return ERR_UND;
     }
 

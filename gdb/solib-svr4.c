@@ -1230,9 +1230,8 @@ svr4_read_so_list (svr4_info *info, CORE_ADDR lm, CORE_ADDR prev_lm,
 
       if (li->l_prev != prev_lm)
 	{
-	  warning (_("Corrupted shared library list: %s != %s"),
-		   paddress (current_inferior ()->arch (), prev_lm),
-		   paddress (current_inferior ()->arch (), li->l_prev));
+	  /* This can happen without negative effect when going backwards
+	     in execution history, so suppress the warning.  */
 	  return 0;
 	}
 

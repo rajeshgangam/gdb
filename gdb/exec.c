@@ -601,6 +601,8 @@ program_space::add_target_sections
 	  m_target_sections.back ().owner = owner;
 	}
 
+      if (number_of_inferiors() > 1)
+    {
       scoped_restore_current_pspace_and_thread restore_pspace_thread;
 
       /* If these are the first file sections we can provide memory
@@ -616,6 +618,11 @@ program_space::add_target_sections
 
 	  switch_to_inferior_no_thread (inf);
 	  inf->push_target (&exec_ops);
+	}
+    }
+      else if (!current_inferior ()->target_is_pushed (&exec_ops))
+	{
+	  current_inferior ()->push_target (&exec_ops);
 	}
     }
 }

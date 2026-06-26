@@ -8831,6 +8831,7 @@ remote_target::fetch_register_using_p (struct regcache *regcache,
   gdb_byte *regp = (gdb_byte *) alloca (register_size (gdbarch, reg->regnum));
   int i;
 
+  memset(regp, 0, register_size (gdbarch, reg->regnum));
   if (m_features.packet_support (PACKET_p) == PACKET_DISABLE)
     return 0;
 
