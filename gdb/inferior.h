@@ -576,6 +576,13 @@ public:
   /* The highest thread number this inferior ever had.  */
   int highest_thread_num = 0;
 
+  /* A map of ptid_t to global thread number and per-inferior thread
+     number, used for targets that support reverse execution.  These
+     mappings are maintained for the lifetime of the inferior so that
+     thread numbers can be reused for threads that reappear after
+     having exited.  */
+  std::unordered_map<ptid_t, std::pair<int, int>> ptid_thread_num_map;
+
   /* State of GDB control of inferior process execution.
      See `struct inferior_control_state'.  */
   inferior_control_state control;

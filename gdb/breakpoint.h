@@ -611,6 +611,9 @@ using bp_location_list = intrusive_list<bp_location>;
 using bp_location_iterator = bp_location_list::iterator;
 using bp_location_range = iterator_range<bp_location_iterator>;
 
+/* Are we executing breakpoint commands?  */
+extern int executing_breakpoint_commands;
+
 /* Note that the ->silent field is not currently used by any commands
    (though the code is in there if it was to be, and set_raw_breakpoint
    does set it to 0).  I implemented it because I thought it would be

@@ -269,6 +269,7 @@ inferior::clear_thread_list ()
 	delete thr;
     });
   ptid_thread_map.clear ();
+  ptid_thread_num_map.clear ();
 }
 
 /* Notify interpreters and observers that inferior INF was removed.  */

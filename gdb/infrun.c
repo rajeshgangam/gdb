@@ -6566,11 +6566,11 @@ handle_inferior_event (struct execution_control_state *ecs)
       ecs->event_thread->set_stop_pc
 	(regcache_read_pc (get_thread_regcache (inferior_thread ())));
 
-      if (handle_stop_requested (ecs))
-	return;
-
       interps_notify_no_history ();
       stop_waiting (ecs);
+      // The end of history is always a stop after a stepping/running op
+      ecs->ws.set_stopped (GDB_SIGNAL_TRAP);
+      handle_signal_stop (ecs);
       return;
     }
 }
@@ -6978,6 +6978,7 @@ handle_signal_stop (struct execution_control_state *ecs)
   /* If necessary, step over this watchpoint.  We'll be back to display
      it in a moment.  */
   if (stopped_by_watchpoint
+      && execution_direction != EXEC_REVERSE
       && (target_have_steppable_watchpoint ()
 	  || gdbarch_have_nonsteppable_watchpoint (gdbarch)))
     {
@@ -9263,10 +9264,15 @@ print_signal_received_reason (struct ui_out *uiout, enum gdb_signal siggnal)
 void
 print_no_history_reason (struct ui_out *uiout)
 {
+  /* Do not print anything as UDB already prints it own (more detailed)
+     messages.  */
+  if (0)
+  {
   if (uiout->is_mi_like_p ())
     uiout->field_string ("reason", async_reason_lookup (EXEC_ASYNC_NO_HISTORY));
   else
     uiout->text ("\nNo more reverse-execution history.\n");
+  }
 }
 
 /* Print current location without a level number, if we have changed

@@ -1059,8 +1059,16 @@ call_function_by_hand_dummy (struct value *function,
   if (get_traceframe_number () >= 0)
     error (_("May not call functions while looking at trace frames."));
 
-  if (execution_direction == EXEC_REVERSE)
-    error (_("Cannot call functions in reverse mode."));
+  /* UndoDB is able to perform inferior calls whilst in reverse mode.
+   *
+   * - the following scoped_restore changes the mode for the duration
+   *   of this function.
+   *
+   * - unpatched, gdb would error at this point and not perform the
+   *   inferior call.
+   */
+  scoped_restore restore_exec_dir
+      = make_scoped_restore (&execution_direction, EXEC_FORWARD);
 
   /* We're going to run the target, and inspect the thread's state
      afterwards.  Hold a strong reference so that the pointer remains

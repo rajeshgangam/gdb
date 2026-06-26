@@ -128,12 +128,12 @@ struct probe_info
 
 static const struct probe_info probe_info[] =
 {
-  { "init_start", DO_NOTHING },
+  { "init_start", FULL_RELOAD },
   { "init_complete", FULL_RELOAD },
   { "map_start", DO_NOTHING },
   { "map_failed", DO_NOTHING },
   { "reloc_complete", UPDATE_OR_RELOAD },
-  { "unmap_start", DO_NOTHING },
+  { "unmap_start", FULL_RELOAD },
   { "unmap_complete", FULL_RELOAD },
 };
 

@@ -303,6 +303,15 @@ add_thread_silent (process_stratum_target *targ, ptid_t ptid)
 			inf->num, ptid.to_string ().c_str (),
 			targ->shortname ());
 
+ /* Targets that support reverse execution can see the same thread
+    being added multiple times.  If the state for an exited thread is
+    still present in the inferior's thread list it must be cleaned up
+    now before we add a new non-exited entry for the same thread.
+    Targets without reverse execution are not affected by this because
+    they do not reuse thread numbers.  */
+  if (target_can_execute_reverse ())
+    delete_exited_threads ();
+
   /* We may have an old thread with the same id in the thread list.
      If we do, it must be dead, otherwise we wouldn't be adding a new
      thread with the same id.  The OS is reusing this id --- delete
@@ -345,8 +354,33 @@ thread_info::thread_info (struct inferior *inf_, ptid_t ptid_)
 {
   gdb_assert (inf_ != NULL);
 
-  this->global_num = ++highest_thread_num;
-  this->per_inf_num = ++inf_->highest_thread_num;
+  /* Targets that support reverse execution may see the same thread be
+     created multiple times so a historical record must be maintained
+     and queried.  For targets without reverse execution we don't look
+     up historical thread numbers because it leaves us vulnerable to
+     collisions between thread identifiers that have been recycled by
+     the target operating system.  */
+  if (target_can_execute_reverse ())
+    {
+      auto pair = inf_->ptid_thread_num_map.find (ptid_);
+      if (pair != inf_->ptid_thread_num_map.end ())
+	{
+	  this->global_num = pair->second.first;
+	  this->per_inf_num = pair->second.second;
+	}
+      else
+	{
+	  this->global_num = ++highest_thread_num;
+	  this->per_inf_num = ++inf_->highest_thread_num;
+	  inf_->ptid_thread_num_map[ptid_] = std::make_pair (this->global_num,
+							     this->per_inf_num);
+	}
+    }
+  else
+    {
+      this->global_num = ++highest_thread_num;
+      this->per_inf_num = ++inf_->highest_thread_num;
+    }
 
   /* Nothing to follow yet.  */
   this->pending_follow.set_spurious ();

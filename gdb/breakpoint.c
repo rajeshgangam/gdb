@@ -685,8 +685,7 @@ gdb_evaluates_breakpoint_condition_p (void)
   return (mode == condition_evaluation_host);
 }
 
-/* Are we executing breakpoint commands?  */
-static int executing_breakpoint_commands;
+int executing_breakpoint_commands = 0;
 
 /* Are overlay event breakpoints enabled? */
 static int overlay_events_enabled;
@@ -3269,10 +3268,12 @@ insert_breakpoint_locations (void)
 	continue;
 
       /* There is no point inserting thread-specific breakpoints if
-	 the thread no longer exists.  ALL_BP_LOCATIONS bp_location
-	 has BL->OWNER always non-NULL.  */
+	 the thread no longer exists, unless the target supports
+	 reverse execution.  ALL_BP_LOCATIONS bp_location has
+	 BL->OWNER always non-NULL.  */
       if (bl->owner->thread != -1
-	  && !valid_global_thread_id (bl->owner->thread))
+	  && !valid_global_thread_id (bl->owner->thread)
+	  && !target_can_execute_reverse ())
 	continue;
 
       /* Or inferior specific breakpoints if the inferior no longer
@@ -3363,14 +3364,20 @@ remove_breakpoints (void)
   return val;
 }
 
-/* When a thread exits, remove breakpoints that are related to
-   that thread.  */
+/* When a thread exits, remove breakpoints that are related to that
+   thread and cannot be hit again.  */
 
 static void
 remove_threaded_breakpoints (thread_info *tp,
 			     std::optional<ULONGEST> /* exit_code */,
 			     int /* silent */)
 {
+  /* Targets that support reverse execution may navigate to a point in
+     time where an exited thread reappears and where its breakpoints
+     are still relevant.  */
+  if (target_can_execute_reverse ())
+    return;
+
   for (breakpoint &b : all_breakpoints_safe ())
     {
       if (b.thread == tp->global_num && user_breakpoint_p (&b))

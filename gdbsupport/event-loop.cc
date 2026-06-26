@@ -189,13 +189,21 @@ int
 gdb_do_one_event (int mstimeout)
 {
   static int event_source_head = 0;
-  const int number_of_sources = 3;
+  const int number_of_sources = 2;
   int current = 0;
 
   /* First let's see if there are any asynchronous signal handlers
      that are ready.  These would be the result of invoking any of the
      signal handlers.  */
   if (invoke_async_signal_handlers ())
+    return 1;
+
+  /* Are there any asynchronous event handlers ready? We must
+     do this before checking the monitored file descriptors so
+     that if we are if we are in sync mode and the inferior is
+     running we do a blocking wait rather than running another
+     command. */
+  if (check_async_event_handlers ())
     return 1;
 
   /* To level the fairness across event sources, we poll them in a
@@ -214,10 +222,6 @@ gdb_do_one_event (int mstimeout)
 	  /* Are there events already waiting to be collected on the
 	     monitored file descriptors?  */
 	  res = gdb_wait_for_event (0);
-	  break;
-	case 2:
-	  /* Are there any asynchronous event handlers ready?  */
-	  res = check_async_event_handlers ();
 	  break;
 	default:
 	  internal_error ("unexpected event_source_head %d",

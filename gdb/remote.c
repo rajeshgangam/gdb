@@ -6868,6 +6868,8 @@ remote_target::remote_resume_with_hc (ptid_t ptid, int step,
   rs->last_sent_signal = siggnal;
   rs->last_sent_step = step;
 
+  set_general_thread(inferior_ptid);
+
   /* The c/s/C/S resume packets use Hc, so set the continue
      thread.  */
   if (ptid == minus_one_ptid)

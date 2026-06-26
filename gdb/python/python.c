@@ -725,11 +725,26 @@ execute_gdb_command (PyObject *self, PyObject *args, PyObject *kw)
 
       counted_command_line lines = read_command_lines_1 (reader, 1, nullptr);
 
+      /* Stay in sync mode whilst executing breakpoint commands so that we don't
+	 return until the inferior has stopped without being resumed. We don't
+	 want to be in async mode because that would cause us to return to the
+	 event loop after running a single breakpoint command, and when we get
+	 back to the event loop a prompt would be printed. But if we then stop
+	 at another breakpoint with executes a resuming command then this prompt
+	 will have been printed early before completely stopping. */
+      scoped_restore save_async = make_scoped_restore (&current_ui->async, 0);
+
       {
-	scoped_restore save_async = make_scoped_restore (&current_ui->async,
-							 0);
 
 	scoped_restore save_uiout = make_scoped_restore (&current_uiout);
+
+	/* We don't want to execute any breakpoint commands when executing the
+	  command as they may cause the inferior to be resumed before
+	  normal_stop observers are notified, preventing the breakpoint from
+	  being printed. Breakpoints commands will be executed in
+	  bpstat_do_actions in this function. */
+	scoped_restore save_executing
+	  = make_scoped_restore (&executing_breakpoint_commands, 1);
 
 	/* Use the console interpreter uiout to have the same print format
 	   for console or MI.  */
